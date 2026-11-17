@@ -7,48 +7,44 @@ W, H = fitz.paper_size("a4")
 doc = fitz.open()
 page = doc.new_page(width=W, height=H)
 
-# Load Windows Calibri fonts (Industry-standard ATS font)
+# Use Windows Verdana font family:
+# Clean modern sans-serif where uppercase 'I' has explicit top/bottom horizontal bars,
+# so 'AI' and 'UI' are NEVER misread as 'Al' or 'Ul' by OCR or human readers.
 font_dir = r"C:\Windows\Fonts"
-f_reg = os.path.join(font_dir, "calibri.ttf")
-f_bold = os.path.join(font_dir, "calibrib.ttf")
-f_ital = os.path.join(font_dir, "calibrii.ttf")
-
-if not os.path.exists(f_reg):
-    f_reg = os.path.join(font_dir, "segoeui.ttf")
-    f_bold = os.path.join(font_dir, "segoeuib.ttf")
-    f_ital = os.path.join(font_dir, "segoeuii.ttf")
+f_reg = os.path.join(font_dir, "verdana.ttf")
+f_bold = os.path.join(font_dir, "verdanab.ttf")
+f_ital = os.path.join(font_dir, "verdanai.ttf")
+f_bi = os.path.join(font_dir, "verdanaz.ttf")
 
 font_reg_obj = fitz.Font(fontfile=f_reg)
 font_bold_obj = fitz.Font(fontfile=f_bold)
 font_ital_obj = fitz.Font(fontfile=f_ital)
+font_bi_obj = fitz.Font(fontfile=f_bi)
 
 page.insert_font(fontname="FReg", fontfile=f_reg)
 page.insert_font(fontname="FBold", fontfile=f_bold)
 page.insert_font(fontname="FItal", fontfile=f_ital)
+page.insert_font(fontname="FBI", fontfile=f_bi)
 
 
 def rgb(r, g, b):
     return (r / 255.0, g / 255.0, b / 255.0)
 
 
-# Clean, Executive Blue & Teal-Green Palette (Recruiter & ATS Friendly)
-C_NAVY = rgb(15, 23, 42)        # #0f172a - Headings & Primary Bold Text
-C_BLUE = rgb(2, 132, 199)       # #0284c7 - Section Titles & Links
-C_TEAL = rgb(5, 150, 105)       # #059669 - Secondary Accent
-C_TEXT = rgb(30, 41, 59)        # #1e293b - Body Text
-C_MUTED = rgb(71, 85, 105)      # #475569 - Dates / Subtitles
-C_LINE = rgb(203, 213, 225)     # #cbd5e1 - Horizontal Divider
+# Exact Color Palette Recommended by Recruiter Review:
+C_NAVY = rgb(15, 23, 42)        # #0F172A - Full Name & Primary Bold Headers
+C_BLUE_DARK = rgb(30, 58, 138)  # #1E3A8A - Section Headers, Divider Line & Tech Stack Accent
+C_CHARCOAL = rgb(31, 41, 55)    # #1F2937 - Body Text / Bullet Points
+C_MUTED = rgb(75, 85, 99)       # #4B5563 - Secondary Subtitle / Role
+C_LINK = rgb(2, 132, 199)       # #0284C7 - Hyperlinks
 
-MARGIN_X = 40.0
-CONTENT_W = W - (MARGIN_X * 2)  # 515.28 pt full single-column width
-
-# Top subtle accent bar (4pt)
-page.draw_rect(fitz.Rect(0, 0, W * 0.6, 4), color=None, fill=C_BLUE)
-page.draw_rect(fitz.Rect(W * 0.6, 0, W, 4), color=None, fill=C_TEAL)
+# Page Margins: 38 pt (~1.34 cm) on all sides
+MARGIN_X = 38.0
+CONTENT_W = W - (MARGIN_X * 2)  # 519.28 pt
 
 
-# Helper: Draw wrapped paragraph in strict top-to-bottom order (single spaces only)
-def draw_wrapped_text(x, y, max_w, text, font_obj, fontname, fontsize, color, line_height=13.0):
+# Helper: Draw wrapped text paragraph (single-spaced words, strict top-to-bottom order)
+def draw_wrapped_text(x, y, max_w, text, font_obj, fontname, fontsize, color, line_height=12.4):
     clean_text = " ".join(text.split())
     words = clean_text.split(" ")
     lines = []
@@ -75,65 +71,142 @@ def draw_wrapped_text(x, y, max_w, text, font_obj, fontname, fontsize, color, li
     return y + len(lines) * line_height
 
 
-# Helper: Draw Clean Plain-Text Section Heading + Horizontal Divider (Zero icon artifacts)
+# Helper: Draw Section Header (11pt Bold ALL CAPS #1E3A8A + Crisp Full-Width Horizontal Rule)
 def draw_section_header(y, title):
-    y += 6.5
+    y += 9.5  # 9.5pt whitespace before new section
     page.insert_text(
         fitz.Point(MARGIN_X, y + 10.5),
         title.upper(),
         fontname="FBold",
-        fontsize=10.8,
-        color=C_BLUE,
+        fontsize=10.5,
+        color=C_BLUE_DARK,
     )
     line_y = y + 14.5
+    # Crisp full-width horizontal divider line in #1E3A8A
     page.draw_line(
         fitz.Point(MARGIN_X, line_y),
-        fitz.Point(MARGIN_X + 120, line_y),
-        color=C_TEAL,
-        width=1.8,
-    )
-    page.draw_line(
-        fitz.Point(MARGIN_X + 120, line_y),
         fitz.Point(MARGIN_X + CONTENT_W, line_y),
-        color=C_LINE,
-        width=1.0,
+        color=C_BLUE_DARK,
+        width=1.35,
     )
     return line_y + 6.5
 
 
-# Helper: Draw Bullet Item (Vector dot so zero font glyph issues in ATS)
-def draw_bullet(y, text, max_w=CONTENT_W):
-    page.draw_circle(fitz.Point(MARGIN_X + 4.0, y + 6.2), 1.8, color=None, fill=C_BLUE)
+# Helper: Draw Bullet Point using real Unicode bullet character "•" so ATS & OCR always read it
+def draw_bullet(y, text, fontsize=8.6, line_height=11.8):
+    bullet_char = "\u2022"
+    page.insert_text(
+        fitz.Point(MARGIN_X + 2.0, y + fontsize),
+        bullet_char,
+        fontname="FBold",
+        fontsize=fontsize,
+        color=C_BLUE_DARK,
+    )
     return draw_wrapped_text(
         MARGIN_X + 12.0,
         y,
-        max_w - 12.0,
+        CONTENT_W - 12.0,
         text,
         font_reg_obj,
         "FReg",
-        9.6,
-        C_TEXT,
-        line_height=12.4,
+        fontsize,
+        C_CHARCOAL,
+        line_height=line_height,
     )
+
+
+# Helper: Draw Inline Bold-Label + Regular-Text Paragraph (for Technical Skills without table/pipe '|')
+def draw_inline_skill_bullet(y, bold_label, regular_items, fontsize=8.5, line_height=11.8):
+    bullet_char = "\u2022"
+    page.insert_text(
+        fitz.Point(MARGIN_X + 2.0, y + fontsize),
+        bullet_char,
+        fontname="FBold",
+        fontsize=fontsize,
+        color=C_BLUE_DARK,
+    )
+    start_x = MARGIN_X + 12.0
+    max_w = CONTENT_W - 12.0
+
+    # Draw bold category title at the start of line 1
+    label_str = bold_label.strip() + " "
+    label_w = font_bold_obj.text_length(label_str, fontsize=fontsize)
+    page.insert_text(
+        fitz.Point(start_x, y + fontsize),
+        label_str,
+        fontname="FBold",
+        fontsize=fontsize,
+        color=C_NAVY,
+    )
+
+    # Wrap the rest of the text starting on line 1 right after label_w, then full width on line 2+
+    words = " ".join(regular_items.split()).split(" ")
+    line1 = ""
+    idx_word = 0
+    rem_w_line1 = max_w - label_w
+
+    while idx_word < len(words):
+        test = (line1 + " " + words[idx_word]).strip()
+        if font_reg_obj.text_length(test, fontsize=fontsize) <= rem_w_line1:
+            line1 = test
+            idx_word += 1
+        else:
+            break
+
+    if line1:
+        page.insert_text(
+            fitz.Point(start_x + label_w, y + fontsize),
+            line1,
+            fontname="FReg",
+            fontsize=fontsize,
+            color=C_CHARCOAL,
+        )
+
+    # Remaining words wrap onto subsequent lines starting at start_x
+    rem_lines = []
+    cur_ln = ""
+    while idx_word < len(words):
+        w = words[idx_word]
+        test = (cur_ln + " " + w).strip()
+        if font_reg_obj.text_length(test, fontsize=fontsize) <= max_w:
+            cur_ln = test
+        else:
+            if cur_ln:
+                rem_lines.append(cur_ln)
+            cur_ln = w
+        idx_word += 1
+    if cur_ln:
+        rem_lines.append(cur_ln)
+
+    for r_idx, r_ln in enumerate(rem_lines):
+        page.insert_text(
+            fitz.Point(start_x, y + fontsize + (r_idx + 1) * line_height),
+            r_ln,
+            fontname="FReg",
+            fontsize=fontsize,
+            color=C_CHARCOAL,
+        )
+
+    total_lines = 1 + len(rem_lines)
+    return y + total_lines * line_height
 
 
 # ==============================================================================
 # 1. HEADER SECTION (LEFT: NAME, TITLE, CONTACT | RIGHT: 3x4 PASSPORT PHOTO)
 # ==============================================================================
-cur_y = 30.0
+cur_y = 32.0
 
-# 3x4 Proportional Portrait Photo on Top Right (Aligned with Header Only)
-PHOTO_W = 66.0   # ~2.33 cm (3x4 ratio)
-PHOTO_H = 88.0   # ~3.10 cm (3x4 ratio)
+# 3x4 Proportional Portrait Photo on Top Right (Aligned with Header)
+PHOTO_W = 63.0   # 3x4 ratio
+PHOTO_H = 84.0   # 3x4 ratio
 PHOTO_X = MARGIN_X + CONTENT_W - PHOTO_W
 PHOTO_Y = cur_y
 
-# Crisp thin frame around 3x4 photo
 page.draw_rect(
-    fitz.Rect(PHOTO_X - 1.5, PHOTO_Y - 1.5, PHOTO_X + PHOTO_W + 1.5, PHOTO_Y + PHOTO_H + 1.5),
-    color=C_BLUE,
+    fitz.Rect(PHOTO_X - 1.2, PHOTO_Y - 1.2, PHOTO_X + PHOTO_W + 1.2, PHOTO_Y + PHOTO_H + 1.2),
+    color=C_BLUE_DARK,
     fill=(1, 1, 1),
-    width=1.2,
+    width=1.0,
 )
 photo_path = os.path.join(os.path.dirname(__file__), "profile_cropped_elbow.jpg")
 page.insert_image(
@@ -141,100 +214,90 @@ page.insert_image(
     filename=photo_path,
 )
 
-# Full Name & Degree
+# Full Name (20pt Bold Navy #0F172A)
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 20.0),
+    fitz.Point(MARGIN_X, cur_y + 18.0),
     "REYNARD KAMADJAJA, S.Kom.",
     fontname="FBold",
-    fontsize=22.0,
+    fontsize=19.5,
     color=C_NAVY,
 )
-cur_y += 28.0
+cur_y += 24.5
 
 # Professional Title
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 10.5),
+    fitz.Point(MARGIN_X, cur_y + 10.0),
     "AI-Augmented Full-Stack & Mobile App Developer | Software Engineer",
     fontname="FBold",
-    fontsize=11.2,
-    color=C_BLUE,
+    fontsize=9.8,
+    color=C_BLUE_DARK,
 )
-cur_y += 18.0
+cur_y += 16.0
 
-# Contact Line 1: Location, Phone/WhatsApp, Email
-contact_line_1 = "Surabaya, East Java, Indonesia | +62 813-5300-2672 | reykamadjaya@gmail.com"
+# Contact Line 1
+c_line1 = "Surabaya, East Java, Indonesia  •  +62 813-5300-2672  •  reykamadjaya@gmail.com"
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 9.5),
-    contact_line_1,
+    fitz.Point(MARGIN_X, cur_y + 8.5),
+    c_line1,
     fontname="FReg",
-    fontsize=9.5,
-    color=C_TEXT,
+    fontsize=8.4,
+    color=C_CHARCOAL,
 )
 page.insert_link(
     {
         "kind": fitz.LINK_URI,
-        "from": fitz.Rect(MARGIN_X + 135, cur_y, MARGIN_X + 220, cur_y + 12),
+        "from": fitz.Rect(MARGIN_X + 150, cur_y, MARGIN_X + 245, cur_y + 11),
         "uri": "https://wa.me/6281353002672",
     }
 )
 page.insert_link(
     {
         "kind": fitz.LINK_URI,
-        "from": fitz.Rect(MARGIN_X + 228, cur_y, MARGIN_X + 355, cur_y + 12),
+        "from": fitz.Rect(MARGIN_X + 255, cur_y, MARGIN_X + 390, cur_y + 11),
         "uri": "mailto:reykamadjaya@gmail.com",
     }
 )
-cur_y += 14.5
+cur_y += 13.0
 
-# Contact Line 2: Portfolio Website & Credly Link
-c2_prefix = "Portfolio: "
-c2_port = "reynaldy4699.github.io"
-c2_sep = " | Credly Badges: "
-c2_cred = "credly.com/users/rey-kamadjaya"
-
-x_cursor = MARGIN_X
-page.insert_text(fitz.Point(x_cursor, cur_y + 9.5), c2_prefix, fontname="FBold", fontsize=9.5, color=C_NAVY)
-x_cursor += font_bold_obj.text_length(c2_prefix, fontsize=9.5)
-
-page.insert_text(fitz.Point(x_cursor, cur_y + 9.5), c2_port, fontname="FBold", fontsize=9.5, color=C_BLUE)
-w_port = font_bold_obj.text_length(c2_port, fontsize=9.5)
+# Contact Line 2 (Portfolio & Credly)
+c_line2 = "Portfolio: reynaldy4699.github.io  •  Credly: credly.com/users/rey-kamadjaya"
+page.insert_text(
+    fitz.Point(MARGIN_X, cur_y + 8.5),
+    c_line2,
+    fontname="FBold",
+    fontsize=8.4,
+    color=C_BLUE_DARK,
+)
 page.insert_link(
     {
         "kind": fitz.LINK_URI,
-        "from": fitz.Rect(x_cursor, cur_y, x_cursor + w_port, cur_y + 12),
+        "from": fitz.Rect(MARGIN_X + 45, cur_y, MARGIN_X + 170, cur_y + 11),
         "uri": "https://reynaldy4699.github.io/",
     }
 )
-x_cursor += w_port
-
-page.insert_text(fitz.Point(x_cursor, cur_y + 9.5), c2_sep, fontname="FBold", fontsize=9.5, color=C_NAVY)
-x_cursor += font_bold_obj.text_length(c2_sep, fontsize=9.5)
-
-page.insert_text(fitz.Point(x_cursor, cur_y + 9.5), c2_cred, fontname="FBold", fontsize=9.5, color=C_BLUE)
-w_cred = font_bold_obj.text_length(c2_cred, fontsize=9.5)
 page.insert_link(
     {
         "kind": fitz.LINK_URI,
-        "from": fitz.Rect(x_cursor, cur_y, x_cursor + w_cred, cur_y + 12),
+        "from": fitz.Rect(MARGIN_X + 215, cur_y, MARGIN_X + 385, cur_y + 11),
         "uri": "https://www.credly.com/users/rey-kamadjaya",
     }
 )
-cur_y += 14.5
+cur_y += 13.0
 
-# Contact Line 3: Work Status & Languages (Comfortable margin from photo)
-contact_line_3 = "Status: Open to Work (Full-Time, Remote, Freelance) | Languages: Indonesian (Native), English (Pro)"
+# Contact Line 3 (Status & Languages)
+c_line3 = "Status: Open to Work (Full-Time, Remote, Freelance)  •  Languages: Indonesian (Native), English (Pro)"
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 9.5),
-    contact_line_3,
+    fitz.Point(MARGIN_X, cur_y + 8.5),
+    c_line3,
     fontname="FReg",
-    fontsize=9.2,
+    fontsize=7.9,
     color=C_MUTED,
 )
-cur_y = max(cur_y + 15.0, PHOTO_Y + PHOTO_H + 4.0)
+cur_y = max(cur_y + 13.0, PHOTO_Y + PHOTO_H + 2.0)
 
 
 # ==============================================================================
-# 2. PROFESSIONAL SUMMARY (FULL SINGLE-COLUMN WIDTH)
+# 2. PROFESSIONAL SUMMARY
 # ==============================================================================
 cur_y = draw_section_header(cur_y, "PROFESSIONAL SUMMARY")
 
@@ -253,25 +316,25 @@ cur_y = draw_wrapped_text(
     summary_text,
     font_reg_obj,
     "FReg",
-    9.7,
-    C_TEXT,
-    line_height=13.2,
+    8.6,
+    C_CHARCOAL,
+    line_height=12.0,
 )
-cur_y += 2.0
+cur_y += 1.5
 
 
 # ==============================================================================
-# 3. PROJECT EXPERIENCE (FULL SINGLE-COLUMN WIDTH)
+# 3. PROJECT EXPERIENCE (JAKE'S RESUME STYLE: TITLE LEFT | TECH STACK RIGHT)
 # ==============================================================================
 cur_y = draw_section_header(cur_y, "PROJECT EXPERIENCE")
 
 projects = [
     {
-        "title": "Sprout Tycoon - 2D Mobile Simulation & Idle Farming Game",
+        "title": "Sprout Tycoon – 2D Mobile Simulation & Idle Game",
+        "stack": "Flutter, Dart, Flame Engine, Firebase, Midtrans QRIS",
         "role": "Lead Developer (Undergraduate Thesis Project)",
         "live_label": "",
         "live_url": "",
-        "stack": "Tech Stack: Flutter, Dart, Flame Engine, Firebase, Midtrans API (QRIS)",
         "bullets": [
             "Built a 2D mobile simulation and idle farming game with a custom game loop, resource management mechanics, and responsive mobile UI using Flutter and Flame Engine.",
             "Integrated real-time in-app purchases using Midtrans QRIS payment gateway for premium currency transactions.",
@@ -279,11 +342,11 @@ projects = [
         ],
     },
     {
-        "title": "Toko Gembira - Desktop POS & Inventory System",
+        "title": "Toko Gembira – Desktop POS & Inventory System",
+        "stack": "Python, CustomTkinter, SQLite, Thermal Printer ESC/POS",
         "role": "Full-Stack Desktop Software Developer",
         "live_label": "",
         "live_url": "",
-        "stack": "Tech Stack: Python, CustomTkinter, SQLite, Thermal Printer ESC/POS Integration",
         "bullets": [
             "Developed a custom desktop Point-of-Sale (POS) and warehouse inventory management application to streamline retail operations.",
             "Engineered real-time stock tracking, sales reporting, and local relational database management using SQLite.",
@@ -291,11 +354,11 @@ projects = [
         ],
     },
     {
-        "title": "Juanda City Park - Multiplatform Real Estate Portal & AI Assistant App",
+        "title": "Juanda City Park – Real Estate Portal & AI App",
+        "stack": "Flutter, Gemini AI API, Google Drive API, Firebase, SQLite",
         "role": "Mobile & Frontend Developer",
-        "live_label": "juandacitypark.com",
+        "live_label": "Live Web: juandacitypark.com",
         "live_url": "https://juandacitypark.com/",
-        "stack": "Tech Stack: Flutter, SQLite, Google Drive API, Firebase Authentication, Gemini AI API",
         "bullets": [
             "Integrated a Gemini AI chatbot assistant to answer prospective buyers' inquiries and assist with property information in real time.",
             "Implemented secure user authentication via Firebase Auth and local user activity logging using SQLite.",
@@ -305,61 +368,62 @@ projects = [
 ]
 
 for proj in projects:
-    # Row 1: Project Title (Left) + Role (Right)
+    # Line 1: Project Name (Bold Left) + Tech Stack (Bold-Italic Blue Right on same baseline!)
+    baseline_y = cur_y + 9.2
     page.insert_text(
-        fitz.Point(MARGIN_X, cur_y + 10.0),
+        fitz.Point(MARGIN_X, baseline_y),
         proj["title"],
         fontname="FBold",
-        fontsize=10.4,
+        fontsize=9.0,
         color=C_NAVY,
     )
-    role_w = font_bold_obj.text_length(proj["role"], fontsize=9.4)
+    stack_w = font_ital_obj.text_length(proj["stack"], fontsize=8.0)
     page.insert_text(
-        fitz.Point(MARGIN_X + CONTENT_W - role_w, cur_y + 10.0),
-        proj["role"],
-        fontname="FBold",
-        fontsize=9.4,
-        color=C_TEAL,
-    )
-    cur_y += 13.5
-
-    # Row 2: Tech Stack (+ optional live website link)
-    page.insert_text(
-        fitz.Point(MARGIN_X, cur_y + 9.2),
+        fitz.Point(MARGIN_X + CONTENT_W - stack_w, baseline_y),
         proj["stack"],
         fontname="FItal",
-        fontsize=9.2,
+        fontsize=8.0,
+        color=C_BLUE_DARK,
+    )
+    cur_y += 12.0
+
+    # Line 2: Role (Italic Muted Left) + Optional Live URL (Right)
+    role_baseline = cur_y + 8.5
+    page.insert_text(
+        fitz.Point(MARGIN_X, role_baseline),
+        proj["role"],
+        fontname="FItal",
+        fontsize=8.3,
         color=C_MUTED,
     )
     if proj["live_label"]:
-        lbl = "Live Web: " + proj["live_label"]
-        lw = font_bold_obj.text_length(lbl, fontsize=9.0)
+        lw = font_bold_obj.text_length(proj["live_label"], fontsize=8.2)
         lx = MARGIN_X + CONTENT_W - lw
         page.insert_text(
-            fitz.Point(lx, cur_y + 9.2),
-            lbl,
+            fitz.Point(lx, role_baseline),
+            proj["live_label"],
             fontname="FBold",
-            fontsize=9.0,
-            color=C_BLUE,
+            fontsize=8.2,
+            color=C_LINK,
         )
         page.insert_link(
             {
                 "kind": fitz.LINK_URI,
-                "from": fitz.Rect(lx, cur_y, lx + lw, cur_y + 11),
+                "from": fitz.Rect(lx, cur_y, lx + lw, cur_y + 10),
                 "uri": proj["live_url"],
             }
         )
-    cur_y += 13.0
+    cur_y += 11.5
 
     # Bullets
     for b in proj["bullets"]:
-        cur_y = draw_bullet(cur_y, b)
-        cur_y += 1.5
-    cur_y += 5.5
+        cur_y = draw_bullet(cur_y, b, fontsize=8.5, line_height=11.6)
+        cur_y += 1.2
+    cur_y += 4.5
 
 
 # ==============================================================================
-# 4. TECHNICAL SKILLS (SINGLE CONSOLIDATED SECTION - 4 CLEAR CATEGORIES)
+# 4. TECHNICAL SKILLS (INLINE PARAGRAPH PER CATEGORY - NO TABLE / NO '|' PIPE)
 # ==============================================================================
 cur_y = draw_section_header(cur_y, "TECHNICAL SKILLS")
 
@@ -382,67 +446,49 @@ skill_rows = [
     ),
 ]
 
-LABEL_COL_W = 122.0
 for cat_label, cat_items in skill_rows:
-    page.draw_circle(fitz.Point(MARGIN_X + 4.0, cur_y + 6.5), 1.9, color=None, fill=C_TEAL)
-    page.insert_text(
-        fitz.Point(MARGIN_X + 12.0, cur_y + 9.7),
-        cat_label,
-        fontname="FBold",
-        fontsize=9.6,
-        color=C_NAVY,
-    )
-    cur_y = draw_wrapped_text(
-        MARGIN_X + 12.0 + LABEL_COL_W,
-        cur_y,
-        CONTENT_W - 12.0 - LABEL_COL_W,
-        cat_items,
-        font_reg_obj,
-        "FReg",
-        9.6,
-        C_TEXT,
-        line_height=12.8,
-    )
-    cur_y += 3.5
+    cur_y = draw_inline_skill_bullet(cur_y, cat_label, cat_items, fontsize=8.5, line_height=11.6)
+    cur_y += 2.2
 
 
 # ==============================================================================
-# 5. EDUCATION (SINGLE-COLUMN, SIMPLIFIED CREDITS WITHOUT SUB-3.0 GPA)
+# 5. EDUCATION (STRICT TOP-TO-BOTTOM ORDER: HEADER -> SCHOOL & DATE -> DEGREE)
 # ==============================================================================
 cur_y = draw_section_header(cur_y, "EDUCATION")
 
-edu_inst = "Institut Sains dan Teknologi Terpadu Surabaya (iSTTS) - Surabaya, Indonesia"
+edu_inst = "Institut Sains dan Teknologi Terpadu Surabaya (iSTTS)"
 edu_date = "Graduated: Nov 2026 | 147 Credits"
 
+edu_base_y = cur_y + 9.2
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 10.0),
+    fitz.Point(MARGIN_X, edu_base_y),
     edu_inst,
     fontname="FBold",
-    fontsize=10.2,
+    fontsize=9.0,
     color=C_NAVY,
 )
-dw = font_bold_obj.text_length(edu_date, fontsize=9.4)
+dw = font_bold_obj.text_length(edu_date, fontsize=8.4)
 page.insert_text(
-    fitz.Point(MARGIN_X + CONTENT_W - dw, cur_y + 10.0),
+    fitz.Point(MARGIN_X + CONTENT_W - dw, edu_base_y),
     edu_date,
     fontname="FBold",
-    fontsize=9.4,
-    color=C_TEAL,
+    fontsize=8.4,
+    color=C_BLUE_DARK,
 )
-cur_y += 13.5
+cur_y += 12.5
 
 page.insert_text(
-    fitz.Point(MARGIN_X, cur_y + 9.5),
-    "Bachelor of Informatics / Sarjana Komputer (S.Kom.)",
-    fontname="FReg",
-    fontsize=9.7,
-    color=C_TEXT,
+    fitz.Point(MARGIN_X, cur_y + 8.8),
+    "Bachelor of Informatics / Sarjana Komputer (S.Kom.) – Surabaya, Indonesia",
+    fontname="FItal",
+    fontsize=8.6,
+    color=C_CHARCOAL,
 )
-cur_y += 14.0
+cur_y += 12.0
 
 
 # ==============================================================================
-# 6. CERTIFICATIONS & CREDENTIALS (FULL SINGLE-COLUMN WIDTH)
+# 6. CERTIFICATIONS & CREDENTIALS (UNIFORM TEXT BULLETS "•" ON EVERY ROW)
 # ==============================================================================
 cur_y = draw_section_header(cur_y, "CERTIFICATIONS & CREDENTIALS")
 
@@ -455,16 +501,16 @@ certs = [
 
 for c_text in certs:
     y_before = cur_y
-    cur_y = draw_bullet(cur_y, c_text)
+    cur_y = draw_bullet(cur_y, c_text, fontsize=8.5, line_height=11.6)
     if "credly.com" in c_text:
         page.insert_link(
             {
                 "kind": fitz.LINK_URI,
-                "from": fitz.Rect(MARGIN_X + 12.0, y_before, MARGIN_X + 360, cur_y),
+                "from": fitz.Rect(MARGIN_X + 12.0, y_before, MARGIN_X + 380, cur_y),
                 "uri": "https://www.credly.com/users/rey-kamadjaya",
             }
         )
-    cur_y += 2.0
+    cur_y += 1.8
 
 out_pdf = os.path.join(os.path.dirname(__file__), "CV_Reynard_Kamadjaja.pdf")
 doc.save(out_pdf)
@@ -473,7 +519,11 @@ doc.save(out_pdf)
 pix = page.get_pixmap(dpi=180)
 preview_png = os.path.join(os.path.dirname(__file__), "CV_Preview.png")
 pix.save(preview_png)
+
+extracted_text = page.get_text("text")
 doc.close()
 
 print("Saved PDF successfully:", out_pdf)
 print("Final Y coordinate:", round(cur_y, 1), "/ Page Height:", round(H, 1))
+print("\n--- ATS EXTRACTED TEXT ORDER ---")
+print(extracted_text)
