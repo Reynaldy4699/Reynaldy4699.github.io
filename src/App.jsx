@@ -229,6 +229,14 @@ export default function App() {
                       <FolderGit2 size={17} />
                       <span>{t.hero.ctaProjects}</span>
                     </a>
+                    <a
+                      href={profileInfo.cvUrl}
+                      download="CV_Reynard_Kamadjaja.pdf"
+                      className="zzz-btn secondary"
+                    >
+                      <Sparkles size={17} />
+                      <span>{t.hero.ctaDownloadCv}</span>
+                    </a>
                     <a href="#contact" className="zzz-btn secondary">
                       <Mail size={17} />
                       <span>{t.hero.ctaContact}</span>

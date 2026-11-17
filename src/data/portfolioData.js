@@ -8,6 +8,7 @@ export const profileInfo = {
   whatsappUrl: 'https://wa.me/6281353002672',
   credlyUrl: 'https://www.credly.com/users/rey-kamadjaya',
   juandaUrl: 'https://juandacitypark.com/',
+  cvUrl: './CV_Reynard_Kamadjaja.pdf',
   location: 'Surabaya, East Java, Indonesia',
   photoUrl: './profile.jpg',
 };
@@ -35,6 +36,7 @@ export const translations = {
       ctaProjects: 'EXPLORE PROJECTS',
       ctaContact: 'CONTACT ME',
       ctaCredly: 'VIEW CREDLY PROFILE',
+      ctaDownloadCv: 'DOWNLOAD CV (PDF)',
       stats: [
         { label: 'DEGREE', value: 'S.Kom. (iSTTS)' },
         { label: 'WORKFLOW', value: 'AI & Prompt Eng.' },
@@ -362,6 +364,7 @@ export const translations = {
       ctaProjects: 'LIHAT PROYEK',
       ctaContact: 'HUBUNGI SAYA',
       ctaCredly: 'PROFIL CREDLY',
+      ctaDownloadCv: 'UNDUH CV (PDF)',
       stats: [
         { label: 'GELAR', value: 'S.Kom. (iSTTS)' },
         { label: 'KEAHLIAN AI', value: 'Prompt & LLM Eng.' },

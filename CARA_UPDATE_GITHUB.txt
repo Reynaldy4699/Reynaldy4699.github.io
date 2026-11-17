@@ -1,0 +1,45 @@
+========================================================================
+PANDUAN CARA MENJALANKAN & UPDATE WEBSITE PORTOFOLIO KE GITHUB
+Nama Website : https://reynaldy4699.github.io/
+Repository   : https://github.com/Reynaldy4699/Reynaldy4699.github.io
+========================================================================
+
+1. CARA MENJALANKAN WEBSITE DI LOCALHOST (KOMPUTER SENDIRI)
+------------------------------------------------------------------------
+Buka terminal di editor ini (tekan Ctrl + ` ), lalu ketik:
+
+    npm run dev
+
+Setelah muncul alamat http://localhost:5173/ , tekan Ctrl + Klik pada
+link tersebut untuk melihat tampilan website di browser.
+Untuk mematikan server lokal, tekan Ctrl + C di terminal.
+
+
+2. DIMANA TEMPAT MENGUBAH DATA / TEKS PORTOFOLIO?
+------------------------------------------------------------------------
+- Untuk mengubah teks biodata, skill, proyek, atau sertifikasi:
+  Buka file: src/data/portfolioData.js
+  (Di dalamnya ada bagian "en" untuk Bahasa Inggris dan "id" untuk Bahasa Indonesia).
+
+- Untuk mengganti foto profil:
+  Ganti file: public/profile.jpg (pastikan namanya tetap profile.jpg).
+
+- Untuk mengubah tampilan / warna:
+  Buka file: src/index.css dan src/App.jsx
+
+
+3. CARA UPDATE PERUBAHAN KE GITHUB (AGAR WEBSITE ONLINE IKUT BERUBAH)
+------------------------------------------------------------------------
+Setiap kali kamu selesai mengedit file di komputer dan ingin meng-update
+website online https://reynaldy4699.github.io/ , buka terminal lalu
+ketik 3 perintah ini secara berurutan:
+
+    git add .
+    git commit -m "Update data portofolio"
+    git push
+
+Setelah "git push" berhasil:
+- Tunggu sekitar 1 menit.
+- GitHub Actions akan otomatis mem-build ulang website kamu.
+- Refresh halaman https://reynaldy4699.github.io/ di browser (tekan Ctrl + F5).
+========================================================================
